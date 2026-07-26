@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#ce4b36" />
+    <title>Crack Chat 🀄</title>
+    <!-- Apply a saved theme before first paint to avoid a flash of the wrong mode. -->
+    <script>
+      try {
+        var t = localStorage.getItem("cc:theme");
+        if (t === "light" || t === "dark")
+          document.documentElement.setAttribute("data-theme", t);
+      } catch (e) {}
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🀄</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="tile-logo">🀙</span>
+          <div>
+            <h1>Crack Chat</h1>
+            <p class="tagline">Your group's Mah Jongg brain</p>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="themeBtn" class="icon-btn" title="Toggle light/dark" aria-label="Toggle light or dark mode">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+          </button>
+          <button id="profileBtn" class="profile-chip" title="Your profile">
+            <span id="profileInitial">?</span>
+          </button>
+        </div>
+      </header>
+
+      <nav class="tabs">
+        <button class="tab is-active" data-view="chat">Chat</button>
+        <button class="tab" data-view="journal">Journal</button>
+      </nav>
+
+      <!-- CHAT VIEW -->
+      <main id="chatView" class="view is-active">
+        <div id="messages" class="messages" aria-live="polite"></div>
+        <form id="chatForm" class="composer" autocomplete="off">
+          <input
+            id="chatInput"
+            class="chat-input"
+            type="text"
+            placeholder="Ask me anything about American Mah Jongg…"
+            aria-label="Your question"
+          />
+          <button id="sendBtn" class="send-btn" type="submit" aria-label="Send">➤</button>
+        </form>
+      </main>
+
+      <!-- JOURNAL VIEW -->
+      <section id="journalView" class="view">
+        <div class="journal-head">
+          <h2>My Mah Jongg Journal</h2>
+          <p class="journal-sub">Jot down what you learned this week. Your notes, your rack.</p>
+        </div>
+        <form id="journalForm" class="journal-form">
+          <textarea
+            id="journalInput"
+            class="journal-input"
+            rows="2"
+            placeholder="e.g. Jokers can't be used in pairs — only groups of 3+!"
+            aria-label="New journal entry"
+          ></textarea>
+          <button class="add-btn" type="submit">Add note</button>
+        </form>
+        <ul id="journalList" class="journal-list"></ul>
+        <p id="journalEmpty" class="journal-empty">
+          No notes yet. Learn something juicy and stash it here. 📝
+        </p>
+      </section>
+    </div>
+
+    <!-- Profile dialog -->
+    <dialog id="profileDialog" class="dialog">
+      <form method="dialog" class="dialog-form">
+        <h3>Who's playing?</h3>
+        <p class="dialog-sub">
+          Your name and journal are saved on this device, just for you.
+        </p>
+        <input
+          id="nameInput"
+          class="name-input"
+          type="text"
+          maxlength="24"
+          placeholder="Your name"
+          aria-label="Your name"
+        />
+        <div class="dialog-actions">
+          <button value="save" class="add-btn">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="app.js"></script>
+  </body>
+</html>

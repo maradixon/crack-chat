@@ -1,0 +1,14 @@
+# Render Blueprint — tells Render how to run Crack Chat.
+# On deploy, Render reads this and sets everything up automatically. The only
+# thing it will ask you for is your ANTHROPIC_API_KEY (kept secret, never in the repo).
+services:
+  - type: web
+    name: crack-chat
+    runtime: node
+    plan: free # change to "starter" ($7/mo) later for always-on / no cold starts
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false # Render will prompt you to paste this in its dashboard
