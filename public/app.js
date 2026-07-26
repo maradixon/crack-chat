@@ -228,6 +228,12 @@ function renderWelcome() {
 
 let sending = false;
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+// Statuses worth retrying: server waking up / temporarily unavailable / rate-limited.
+// App-level errors (400/401/500) won't be helped by a retry, so we surface those.
+const RETRYABLE_STATUS = new Set([404, 429, 502, 503, 504]);
+const MAX_ATTEMPTS = 4;
+
 async function send(text) {
   if (sending || !text.trim()) return;
   sending = true;
@@ -242,48 +248,64 @@ async function send(text) {
 
   const bubble = addBotBubble();
   let full = "";
+  let delivered = false;
 
-  try {
-    const res = await fetch("/api/chat", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ messages: history }),
-    });
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS && !delivered; attempt++) {
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history }),
+      });
 
-    if (!res.ok) {
-      let msg = "Something went wrong. Try again in a sec.";
-      try {
-        const data = await res.json();
-        if (data.error) msg = data.error;
-      } catch {}
-      bubble.innerHTML = renderMarkdown(`⚠ ${msg}`);
-      sending = false;
-      els.sendBtn.disabled = false;
-      return;
+      if (!res.ok) {
+        // Transient hiccup (e.g. server waking) — show a friendly note and retry.
+        if (RETRYABLE_STATUS.has(res.status) && attempt < MAX_ATTEMPTS) {
+          bubble.innerHTML = renderMarkdown("🀄 Waking up, hang tight…");
+          await sleep(3000);
+          continue;
+        }
+        // App-level error, or out of retries — surface the message.
+        let msg = "Something went wrong. Give it another shot in a sec.";
+        try {
+          const data = await res.json();
+          if (data.error) msg = data.error;
+        } catch {}
+        bubble.innerHTML = renderMarkdown(`⚠ ${msg}`);
+        break;
+      }
+
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      full = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        full += decoder.decode(value, { stream: true });
+        bubble.innerHTML = renderMarkdown(full);
+        scrollToBottom();
+      }
+
+      delivered = true;
+      history.push({ role: "assistant", content: full });
+      if (full.trim()) addSaveButton(bubble, full);
+    } catch (err) {
+      // Network error — likely the server waking up or a dropped connection.
+      if (attempt < MAX_ATTEMPTS) {
+        bubble.innerHTML = renderMarkdown("🀄 Waking up, hang tight…");
+        await sleep(3000);
+        continue;
+      }
+      bubble.innerHTML = renderMarkdown(
+        "⚠ I couldn't reach the server. Check your connection and try again."
+      );
     }
-
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      full += decoder.decode(value, { stream: true });
-      bubble.innerHTML = renderMarkdown(full);
-      scrollToBottom();
-    }
-
-    history.push({ role: "assistant", content: full });
-    if (full.trim()) addSaveButton(bubble, full);
-  } catch (err) {
-    bubble.innerHTML = renderMarkdown(
-      "⚠ I couldn't reach the server. Check that it's running and try again."
-    );
-  } finally {
-    sending = false;
-    els.sendBtn.disabled = false;
-    els.chatInput.focus();
-    scrollToBottom();
   }
+
+  sending = false;
+  els.sendBtn.disabled = false;
+  els.chatInput.focus();
+  scrollToBottom();
 }
 
 els.chatForm.addEventListener("submit", (e) => {

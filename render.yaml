@@ -5,7 +5,7 @@ services:
   - type: web
     name: crack-chat
     runtime: node
-    plan: free # change to "starter" ($7/mo) later for always-on / no cold starts
+    plan: starter # $7/mo always-on instance — no cold starts
     buildCommand: npm install
     startCommand: npm start
     healthCheckPath: /api/health
